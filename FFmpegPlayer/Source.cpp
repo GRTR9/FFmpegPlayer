@@ -85,6 +85,9 @@ AVFrame* RequestFrame(DecoderParam& param) {
 				}
 			}
 		}
+		else if (ret < 0) {
+			return nullptr;
+		}
 
 		av_packet_unref(packet);
 	}
@@ -155,12 +158,13 @@ int WINAPI WinMain(
 	auto& fmtCtx = decoderParam.fmtCtx;
 	auto& vcodecCtx = decoderParam.vcodecCtx;
 
-	auto window = CreateWindow(className, L"Hello World Title", WS_POPUP, CW_USEDEFAULT, CW_USEDEFAULT, width, height, NULL, NULL, hInstance, NULL);
+	auto window = CreateWindow(className, L"FFmpegPlayer", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, width, height, NULL, NULL, NULL, NULL);
 
 	ShowWindow(window, SW_SHOW);
 
 	vector<uint8_t> buffer(width * height * 4);
 	MSG msg;
+	bool isend = false;
 	auto currentTime = chrono::system_clock::now();
 	while (1) {
 		BOOL hasMsg = PeekMessage(&msg, NULL, 0, 0, PM_REMOVE);
@@ -171,9 +175,15 @@ int WINAPI WinMain(
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		}
-		else {
+		else if(!isend) {
 			AVFrame* frame = RequestFrame(decoderParam);
-
+			if (frame == nullptr) {
+				isend = true;
+				av_frame_free(&frame);
+				avcodec_free_context(&vcodecCtx);
+				avformat_close_input(&fmtCtx);
+				continue;
+			}
 			double framerate = (double)vcodecCtx->framerate.den / vcodecCtx->framerate.num;
 			std::this_thread::sleep_until(currentTime + chrono::milliseconds((int)(framerate * 1000)));
 			currentTime = chrono::system_clock::now();
@@ -183,6 +193,5 @@ int WINAPI WinMain(
 			av_frame_free(&frame);
 		}
 	}
-
 	return 0;
 }
