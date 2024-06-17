@@ -19,9 +19,6 @@ extern "C" {
 
 #include <libswscale/swscale.h>
 #pragma comment(lib, "swscale.lib")
-
-#include <d3d9.h>
-#pragma comment(lib, "d3d9.lib")
 }
 
 using namespace std;
@@ -34,6 +31,13 @@ struct DecoderParam
 	int width;
 	int height;
 	int videoStreamIndex;
+};
+
+struct Color_RGB
+{
+	uint8_t r;
+	uint8_t g;
+	uint8_t b;
 };
 
 void InitDecoder(const char* filePath, DecoderParam& param) {
@@ -51,11 +55,6 @@ void InitDecoder(const char* filePath, DecoderParam& param) {
 			avcodec_open2(vcodecCtx, codec, NULL);
 		}
 	}
-
-	//hardware
-	AVBufferRef* hw_device_ctx = nullptr;
-	av_hwdevice_ctx_create(&hw_device_ctx, AVHWDeviceType::AV_HWDEVICE_TYPE_DXVA2, NULL, NULL, NULL);
-	vcodecCtx->hw_device_ctx = hw_device_ctx;
 
 	param.fmtCtx = fmtCtx;
 	param.vcodecCtx = vcodecCtx;
@@ -92,31 +91,33 @@ AVFrame* RequestFrame(DecoderParam& param) {
 	return nullptr;
 }
 
-void RenderHWFrame(HWND hwnd, AVFrame* frame) {
-	IDirect3DSurface9* surface = (IDirect3DSurface9*)frame->data[3];
-	IDirect3DDevice9* device;
-	surface->GetDevice(&device);
+vector<Color_RGB> GetRGBPixels(AVFrame* frame, vector<Color_RGB>& buffer) {
+	static SwsContext* swsctx = nullptr;
+	swsctx = sws_getCachedContext(
+		swsctx,
+		frame->width, frame->height, (AVPixelFormat)frame->format,
+		frame->width, frame->height, AVPixelFormat::AV_PIX_FMT_BGR24, NULL, NULL, NULL, NULL);
 
-	static ComPtr<IDirect3DSwapChain9> mySwap;
-	if (mySwap == nullptr) {
-		D3DPRESENT_PARAMETERS params = {};
-		params.Windowed = TRUE;
-		params.hDeviceWindow = hwnd;
-		params.BackBufferFormat = D3DFORMAT::D3DFMT_X8R8G8B8;
-		params.BackBufferWidth = frame->width;
-		params.BackBufferHeight = frame->height;
-		params.SwapEffect = D3DSWAPEFFECT_DISCARD;
-		params.BackBufferCount = 1;
-		params.Flags = 0;
-		device->CreateAdditionalSwapChain(&params, mySwap.GetAddressOf());
-	}
+	uint8_t* data[] = { (uint8_t*)&buffer[0] };
+	int linesize[] = { frame->width * 3 };
+	sws_scale(swsctx, frame->data, frame->linesize, 0, frame->height, data, linesize);
 
-	ComPtr<IDirect3DSurface9> backSurface;
-	mySwap->GetBackBuffer(0, D3DBACKBUFFER_TYPE_MONO, backSurface.GetAddressOf());
+	return buffer;
+}
 
-	device->StretchRect(surface, NULL, backSurface.Get(), NULL, D3DTEXF_LINEAR);
+void StretchBits(HWND hwnd, const vector<Color_RGB>& bits, int width, int height) {
+	auto hdc = GetDC(hwnd);
+	BITMAPINFO bitinfo = {};
+	auto& bmiHeader = bitinfo.bmiHeader;
+	bmiHeader.biSize = sizeof(bitinfo.bmiHeader);
+	bmiHeader.biWidth = width;
+	bmiHeader.biHeight = -height;
+	bmiHeader.biPlanes = 1;
+	bmiHeader.biBitCount = 24;
+	bmiHeader.biCompression = BI_RGB;
 
-	mySwap->Present(NULL, NULL, NULL, NULL, NULL);
+	StretchDIBits(hdc, 0, 0, width, height, 0, 0, width, height, &bits[0], &bitinfo, DIB_RGB_COLORS, SRCCOPY);
+	ReleaseDC(hwnd, hdc);
 }
 
 int WINAPI WinMain(
@@ -147,7 +148,7 @@ int WINAPI WinMain(
 	//frame
 	//test.264
 	//Big_Buck_Bunny_1080_10s_1MB.mp4
-	string filePath = ".\\TestData\\Big_Buck_Bunny_1080_10s_1MB.mp4";
+	string filePath = ".\\TestData\\test.264";
 	DecoderParam decoderParam;
 	InitDecoder(filePath.c_str(), decoderParam);
 	auto& width = decoderParam.width;
@@ -155,11 +156,11 @@ int WINAPI WinMain(
 	auto& fmtCtx = decoderParam.fmtCtx;
 	auto& vcodecCtx = decoderParam.vcodecCtx;
 
-	auto window = CreateWindow(className, L"Hello World Title", WS_POPUP, CW_USEDEFAULT, CW_USEDEFAULT, width, height, NULL, NULL, hInstance, NULL);
+	auto window = CreateWindow(className, L"Hello World Title", WS_OVERLAPPEDWINDOW, 0, 0, decoderParam.width, decoderParam.height, NULL, NULL, hInstance, NULL);
 
 	ShowWindow(window, SW_SHOW);
 
-	vector<uint8_t> buffer(width * height * 4);
+	vector<Color_RGB> buffer(width * height);
 	MSG msg;
 	auto currentTime = chrono::system_clock::now();
 	while (1) {
@@ -174,13 +175,15 @@ int WINAPI WinMain(
 		else {
 			AVFrame* frame = RequestFrame(decoderParam);
 
+			vector<Color_RGB> pixels = GetRGBPixels(frame, buffer);
+
+			av_frame_free(&frame);
+
 			double framerate = (double)vcodecCtx->framerate.den / vcodecCtx->framerate.num;
 			std::this_thread::sleep_until(currentTime + chrono::milliseconds((int)(framerate * 1000)));
 			currentTime = chrono::system_clock::now();
 
-			RenderHWFrame(window, frame);
-
-			av_frame_free(&frame);
+			StretchBits(window, pixels, width, height);
 		}
 	}
 
