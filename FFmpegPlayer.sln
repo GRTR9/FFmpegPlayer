@@ -5,6 +5,10 @@ VisualStudioVersion = 16.0.34601.136
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FFmpegPlayer", "FFmpegPlayer\FFmpegPlayer.vcxproj", "{D42EC8FC-9F2E-4A88-8642-EEF038481D7D}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FFmpegVideoPlayer", "FFmpegVideoPlayer\FFmpegVideoPlayer.vcxproj", "{CACE34F0-0630-49CF-8563-6461DE37D092}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FFmpegAudioPlayer", "FFmpegAudioPlayer\FFmpegAudioPlayer.vcxproj", "{D8B9678E-4C36-44D1-8DE0-2D9146FFE3EA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -21,6 +25,22 @@ Global
 		{D42EC8FC-9F2E-4A88-8642-EEF038481D7D}.Release|x64.Build.0 = Release|x64
 		{D42EC8FC-9F2E-4A88-8642-EEF038481D7D}.Release|x86.ActiveCfg = Release|Win32
 		{D42EC8FC-9F2E-4A88-8642-EEF038481D7D}.Release|x86.Build.0 = Release|Win32
+		{CACE34F0-0630-49CF-8563-6461DE37D092}.Debug|x64.ActiveCfg = Debug|x64
+		{CACE34F0-0630-49CF-8563-6461DE37D092}.Debug|x64.Build.0 = Debug|x64
+		{CACE34F0-0630-49CF-8563-6461DE37D092}.Debug|x86.ActiveCfg = Debug|Win32
+		{CACE34F0-0630-49CF-8563-6461DE37D092}.Debug|x86.Build.0 = Debug|Win32
+		{CACE34F0-0630-49CF-8563-6461DE37D092}.Release|x64.ActiveCfg = Release|x64
+		{CACE34F0-0630-49CF-8563-6461DE37D092}.Release|x64.Build.0 = Release|x64
+		{CACE34F0-0630-49CF-8563-6461DE37D092}.Release|x86.ActiveCfg = Release|Win32
+		{CACE34F0-0630-49CF-8563-6461DE37D092}.Release|x86.Build.0 = Release|Win32
+		{D8B9678E-4C36-44D1-8DE0-2D9146FFE3EA}.Debug|x64.ActiveCfg = Debug|x64
+		{D8B9678E-4C36-44D1-8DE0-2D9146FFE3EA}.Debug|x64.Build.0 = Debug|x64
+		{D8B9678E-4C36-44D1-8DE0-2D9146FFE3EA}.Debug|x86.ActiveCfg = Debug|Win32
+		{D8B9678E-4C36-44D1-8DE0-2D9146FFE3EA}.Debug|x86.Build.0 = Debug|Win32
+		{D8B9678E-4C36-44D1-8DE0-2D9146FFE3EA}.Release|x64.ActiveCfg = Release|x64
+		{D8B9678E-4C36-44D1-8DE0-2D9146FFE3EA}.Release|x64.Build.0 = Release|x64
+		{D8B9678E-4C36-44D1-8DE0-2D9146FFE3EA}.Release|x86.ActiveCfg = Release|Win32
+		{D8B9678E-4C36-44D1-8DE0-2D9146FFE3EA}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
